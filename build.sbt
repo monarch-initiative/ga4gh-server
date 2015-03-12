@@ -1,4 +1,4 @@
-name := """g2p"""
+name := """ga4gh-server"""
 
 version := "1.0-SNAPSHOT"
 

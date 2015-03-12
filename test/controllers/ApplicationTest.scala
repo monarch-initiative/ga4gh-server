@@ -5,7 +5,6 @@ import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import org.apache.avro.specific.SpecificDatumReader
 import org.ga4gh.SearchGenotypePhenotypeRequest
-import org.ga4gh.JeremyTest
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.specific.SpecificDatumWriter
 import org.apache.avro.io.EncoderFactory
