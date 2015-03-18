@@ -1,25 +1,18 @@
 package controllers
 
 import java.io.ByteArrayOutputStream
-
-import scala.collection.JavaConversions.seqAsJavaList
+import scala.collection.JavaConversions._
 import scala.concurrent.Future
-
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.io.EncoderFactory
 import org.apache.avro.specific.SpecificDatumReader
 import org.apache.avro.specific.SpecificDatumWriter
 import org.ga4gh.EnvironmentalContext
 import org.ga4gh.Evidence
-import org.ga4gh.Genotype
-import org.ga4gh.Phenotype
+import org.ga4gh.PhenotypeInstance
 import org.ga4gh.SearchGenotypePhenotypeRequest
 import org.ga4gh.SearchGenotypePhenotypeResponse
-import org.ga4gh.SearchPhenotypeGenotypeResponse
-import org.ga4gh.VariantGenotypeAssociation
-import org.ga4gh.VariantPhenotypeAssociation
 import org.ga4gh.models.OntologyTerm
-
 import models.SciGraphCategory
 import models.SciGraphEdge
 import models.SciGraphNode
@@ -30,6 +23,14 @@ import play.api.libs.ws.WS
 import play.api.libs.ws.WSRequestHolder
 import play.api.mvc.Action
 import play.api.mvc.Controller
+import org.ga4gh.FeaturePhenotypeAssociation
+import org.apache.avro.specific.SpecificRecordBase
+import org.ga4gh.models.Feature
+import org.ga4gh.models.Position
+import org.ga4gh.models.Strand
+import org.ga4gh.models.Region
+import org.ga4gh.models.Attributes
+import org.ga4gh.models.ExternalIdentifier
 
 object Application extends Controller {
   val serverUrl = "http://rosie.crbs.ucsd.edu:9000/scigraph/"
@@ -59,7 +60,7 @@ object Application extends Controller {
       responseFut.map(_ match {
         case (nodes, edges) => {
           val searchGenotypePhenotypeResponse = toSearchGenotypePhenotypeResponse(nodes, edges)
-          Ok(serializeSearchGenotypePhenotypeRequest(searchGenotypePhenotypeResponse))
+          Ok(serialize(searchGenotypePhenotypeResponse))
         }
       })
   }
@@ -72,7 +73,7 @@ object Application extends Controller {
       responseFut.map(_ match {
         case (nodes, edges) => {
           val searchGenotypePhenotypeResponse = toSearchPhenotypeGenotypeResponse(nodes, edges)
-          Ok(serializeSearchPhenotypeGenotypeRequest(searchGenotypePhenotypeResponse))
+          Ok(serialize(searchGenotypePhenotypeResponse))
         }
       })
   }
@@ -87,26 +88,6 @@ object Application extends Controller {
     val datumReader = new SpecificDatumReader[SearchGenotypePhenotypeRequest](SearchGenotypePhenotypeRequest.getClassSchema)
     val decoder = DecoderFactory.get.jsonDecoder(SearchGenotypePhenotypeRequest.getClassSchema, input)
     datumReader.read(null, decoder)
-  }
-
-  def serializeSearchGenotypePhenotypeRequest(input: SearchGenotypePhenotypeResponse): String = {
-    val out = new ByteArrayOutputStream()
-    val datumWriter = new SpecificDatumWriter[SearchGenotypePhenotypeResponse](SearchGenotypePhenotypeResponse.getClassSchema)
-    val encoder = EncoderFactory.get.jsonEncoder(SearchGenotypePhenotypeResponse.getClassSchema, out, true)
-    datumWriter.write(input, encoder)
-    encoder.flush()
-    out.close()
-    out.toString
-  }
-
-  def serializeSearchPhenotypeGenotypeRequest(input: SearchPhenotypeGenotypeResponse): String = {
-    val out = new ByteArrayOutputStream()
-    val datumWriter = new SpecificDatumWriter[SearchPhenotypeGenotypeResponse](SearchPhenotypeGenotypeResponse.getClassSchema)
-    val encoder = EncoderFactory.get.jsonEncoder(SearchPhenotypeGenotypeResponse.getClassSchema, out, true)
-    datumWriter.write(input, encoder)
-    encoder.flush()
-    out.close()
-    out.toString
   }
 
   /**
@@ -132,48 +113,84 @@ object Application extends Controller {
 
   }
 
-  def toSearchPhenotypeGenotypeResponse(nodes: List[SciGraphNode], edges: List[SciGraphEdge]): SearchPhenotypeGenotypeResponse = {
+  def toSearchPhenotypeGenotypeResponse(nodes: List[SciGraphNode], edges: List[SciGraphEdge]): SearchGenotypePhenotypeResponse = {
     val geneString = "gene"
+    val phenotypeString = "Phenotype"
+    val basePhenotype = nodes.filter { n => n.meta.category.contains(phenotypeString) }.apply(0) // TODO make sure that this the queried phenotype
     val genes = nodes.filter { n => n.meta.category.contains(geneString) }
 
-    val variantGenotypeAssociation = genes.map(gene => {
+    val basePhenotypeontologyTerm = new OntologyTerm()
+    basePhenotypeontologyTerm.setId(basePhenotype.id)
+    basePhenotypeontologyTerm.setName(basePhenotype.lbl)
+    basePhenotypeontologyTerm.setOntologySource(basePhenotype.id.split(":").apply(0))
+    val evidence = new Evidence()
+    evidence.setEvidenceType(basePhenotypeontologyTerm) // TODO
+
+    val ph = new PhenotypeInstance()
+    ph.setType(basePhenotypeontologyTerm)
+
+    val featurePhenotypeAssociations = genes.map(gene => {
       val ontologyTerm = new OntologyTerm()
       ontologyTerm.setId(gene.id)
       ontologyTerm.setName(gene.lbl)
-      ontologyTerm.setOntologySource("") // TODO
+      ontologyTerm.setOntologySource(gene.id.split(":").apply(0))
 
-      val genotype = new Genotype()
-      genotype.setId(gene.id)
-      genotype.setGenotype(ontologyTerm)
+      val region = {
+        val position = new Position() // TODO
+        position.setPosition(0) // TODO
+        position.setStrand(Strand.NO_STRAND) // TODO
+        val r = new Region()
+        r.setLength(0)
+        r.setStart(position)
+        r
+      }
 
-      val variantGenotypeAssociation = new VariantGenotypeAssociation()
-      variantGenotypeAssociation.setId("") // TODO
-      variantGenotypeAssociation.setGenotype(genotype)
-      variantGenotypeAssociation
+      val attributes = new Attributes()
+      attributes.setStrAttrs(mapAsJavaMap(Map.empty))
+      attributes.setExtIdAttrs(mapAsJavaMap(Map.empty))
+      attributes.setOntTermAttrs(mapAsJavaMap(Map.empty))
+
+      val feature = new Feature()
+      feature.setId(gene.id)
+      feature.setParentIds(List.empty[String])
+      feature.setFeatureSetId("") // TODO
+      feature.setFeatureType(ontologyTerm)
+      feature.setRegion(region)
+      feature.setAttributes(attributes)
+
+      val featurePhenotypeAssociation = new FeaturePhenotypeAssociation()
+      featurePhenotypeAssociation.setId("") // TODO
+      featurePhenotypeAssociation.setFeatures(List(feature))
+      featurePhenotypeAssociation.setEvidence(evidence)
+      featurePhenotypeAssociation.setPhenotype(ph)
+      featurePhenotypeAssociation.setEnvironmentalContexts(List.empty[EnvironmentalContext])
+
+      featurePhenotypeAssociation
     })
 
-    val searchPhenotypeGenotypeResponse = new SearchPhenotypeGenotypeResponse()
-    searchPhenotypeGenotypeResponse.setAssociations(variantGenotypeAssociation)
+    val searchPhenotypeGenotypeResponse = new SearchGenotypePhenotypeResponse()
+    searchPhenotypeGenotypeResponse.setAssociations(featurePhenotypeAssociations)
     searchPhenotypeGenotypeResponse
   }
 
   def toSearchGenotypePhenotypeResponse(nodes: List[SciGraphNode], edges: List[SciGraphEdge]): SearchGenotypePhenotypeResponse = {
     val phenotypeString = "Phenotype"
+    val diseaseString = "disease"
     val hasObjectString = "hasObject"
     val evidenceString = "evidence"
-    val phenotypes = nodes.filter { n => n.meta.category.contains(phenotypeString) }
+    val geneString = "gene"
+    val baseGene = nodes.filter { n => n.meta.category.contains(geneString) }.apply(0) // TODO make sure that this the queried gene
+    val phenotypes = nodes.filter { n => n.meta.category.contains(phenotypeString) || n.meta.category.contains(diseaseString) }
     val variantPhenotypeAssociations = phenotypes.map(phenotype => {
       val ontologyTerm = new OntologyTerm()
       ontologyTerm.setId(phenotype.id)
       ontologyTerm.setName(phenotype.lbl)
-      ontologyTerm.setOntologySource("") // TODO
+      ontologyTerm.setOntologySource(phenotype.id.split(":").apply(0))
 
-      val ph = new Phenotype()
-      ph.setId(phenotype.id)
-      ph.setPhenotype(ontologyTerm)
-      ph.setEnvironmentalContexts(List.empty[EnvironmentalContext])
+      val ph = new PhenotypeInstance()
+      ph.setType(ontologyTerm)
 
-      val (evidenceIdOpt, evidenceId) = {
+      val (evidenceIdOpt, associationId) = {
         val annotation = edges.find { edge => edge.obj == phenotype.id && edge.pred == hasObjectString }
         if (annotation.isDefined) {
           val evidence = edges.find { edge => edge.sub == annotation.get.sub && edge.pred == evidenceString }
@@ -188,22 +205,67 @@ object Application extends Controller {
       }
       val evidenceOntologyTerm = new OntologyTerm()
       evidenceOntologyTerm.setId(evidenceIdOpt.getOrElse(""))
-      evidenceOntologyTerm.setOntologySource("")
+      val evidenceOntologySource = {
+        if (evidenceOntologyTerm.getId != "") {
+          evidenceOntologyTerm.getId.toString.split(":").apply(0)
+        } else { "" }
+      }
+      evidenceOntologyTerm.setOntologySource(evidenceOntologySource)
 
       val evidence = new Evidence()
       evidence.setEvidenceType(evidenceOntologyTerm)
 
-      val variantPhenotypeAssociation = new VariantPhenotypeAssociation()
-      variantPhenotypeAssociation.setId(evidenceId.getOrElse(""))
-      variantPhenotypeAssociation.setPhenotype(ph)
-      variantPhenotypeAssociation.setEvidence(evidence)
+      val region = {
+        val position = new Position() // TODO
+        position.setPosition(0) // TODO
+        position.setStrand(Strand.NO_STRAND) // TODO
+        val r = new Region()
+        r.setLength(0)
+        r.setStart(position)
+        r
+      }
 
-      variantPhenotypeAssociation
+      val attributes = new Attributes()
+      attributes.setStrAttrs(mapAsJavaMap(Map.empty))
+      attributes.setExtIdAttrs(mapAsJavaMap(Map.empty))
+      attributes.setOntTermAttrs(mapAsJavaMap(Map.empty))
+
+      val baseGeneOntologyTerm = new OntologyTerm()
+      baseGeneOntologyTerm.setId(baseGene.id)
+      baseGeneOntologyTerm.setName(baseGene.lbl)
+      baseGeneOntologyTerm.setOntologySource(baseGene.id.split(":").apply(0))
+
+      val feature = new Feature()
+      feature.setId(baseGene.id)
+      feature.setParentIds(List.empty[String])
+      feature.setFeatureSetId("") // TODO
+      feature.setFeatureType(baseGeneOntologyTerm)
+      feature.setRegion(region)
+      feature.setAttributes(attributes)
+
+      val featurePhenotypeAssociation = new FeaturePhenotypeAssociation()
+      featurePhenotypeAssociation.setId(associationId.getOrElse(""))
+      featurePhenotypeAssociation.setPhenotype(ph)
+      featurePhenotypeAssociation.setEvidence(evidence)
+      featurePhenotypeAssociation.setFeatures(List(feature))
+      featurePhenotypeAssociation.setEnvironmentalContexts(List.empty[EnvironmentalContext])
+
+      featurePhenotypeAssociation
     })
 
     val searchGenotypePhenotypeResponse = new SearchGenotypePhenotypeResponse()
     searchGenotypePhenotypeResponse.setAssociations(variantPhenotypeAssociations)
     searchGenotypePhenotypeResponse
+  }
+
+  def serialize[T <: SpecificRecordBase](item: T): String = {
+    val out = new ByteArrayOutputStream()
+    val datumWriter = new SpecificDatumWriter[T](item.getSchema)
+    val encoder = EncoderFactory.get.jsonEncoder(item.getSchema, out, true)
+    datumWriter.write(item, encoder)
+    encoder.flush()
+    out.close()
+    out.toString
   }
 
 }

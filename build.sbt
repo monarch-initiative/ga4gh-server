@@ -15,4 +15,6 @@ libraryDependencies ++= Seq(
 
 libraryDependencies += "org.ga4gh" % "ga4gh-format" % "0.6.0-SNAPSHOT"
 
-resolvers += Resolver.mavenLocal
+resolvers += "BBOP snapshots" at "http://knife.lbl.gov/maven/repository/"
+
+resolvers += "BBOP" at "http://knife.lbl.gov/maven/snapshot-repository/"

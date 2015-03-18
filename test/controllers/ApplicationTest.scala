@@ -42,18 +42,22 @@ case class ApplicationTest() extends Specification {
       //      val obj = datumReader.read(null, decoder)
       //      println(obj)
 
-      //val out = new FileOutputStream("/home/jnguyenxuan/output.json")
-      val out = new ByteArrayOutputStream()
+      //      //val out = new FileOutputStream("/home/jnguyenxuan/output.json")
+      //      val out = new ByteArrayOutputStream()
+      //      val toSer = new SearchGenotypePhenotypeRequest()
+      //      toSer.setPageSize(5)
+      //      val datumWriter = new SpecificDatumWriter[SearchGenotypePhenotypeRequest](SearchGenotypePhenotypeRequest.getClassSchema)
+      //      val encoder = EncoderFactory.get.jsonEncoder(SearchGenotypePhenotypeRequest.getClassSchema, out, true)
+      //      datumWriter.write(toSer, encoder)
+      //      encoder.flush()
+      //      out.close()
+      //      println(out.toString)
+
       val toSer = new SearchGenotypePhenotypeRequest()
       toSer.setPageSize(5)
-      val datumWriter = new SpecificDatumWriter[SearchGenotypePhenotypeRequest](SearchGenotypePhenotypeRequest.getClassSchema)
-      val encoder = EncoderFactory.get.jsonEncoder(SearchGenotypePhenotypeRequest.getClassSchema, out, true)
-      datumWriter.write(toSer, encoder)
-      encoder.flush()
-      out.close()
-      println(out.toString)
+      println(Application.serialize(toSer))
 
-      val input = """{"pageSize": {"int":5}, "variant":null,"evidence":null, "phenotype":null , "pageToken": null }"""
+      val input = """{"pageSize": {"int":5}, "feature":null,"evidence":null, "phenotype":null , "pageToken": null }"""
       val obj = Application.deserializeSearchGenotypePhenotypeRequest(input)
       println(obj)
       true
