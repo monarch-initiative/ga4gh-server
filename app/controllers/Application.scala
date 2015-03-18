@@ -123,8 +123,14 @@ object Application extends Controller {
     basePhenotypeontologyTerm.setId(basePhenotype.id)
     basePhenotypeontologyTerm.setName(basePhenotype.lbl)
     basePhenotypeontologyTerm.setOntologySource(basePhenotype.id.split(":").apply(0))
+
+    val fakeEvidenceOntologyTerm = new OntologyTerm()
+    fakeEvidenceOntologyTerm.setId("ECO:0000000")
+    fakeEvidenceOntologyTerm.setName("evidence")
+    fakeEvidenceOntologyTerm.setOntologySource("ECO")
+
     val evidence = new Evidence()
-    evidence.setEvidenceType(basePhenotypeontologyTerm) // TODO
+    evidence.setEvidenceType(fakeEvidenceOntologyTerm)
 
     val ph = new PhenotypeInstance()
     ph.setType(basePhenotypeontologyTerm)
@@ -150,11 +156,16 @@ object Application extends Controller {
       attributes.setExtIdAttrs(mapAsJavaMap(Map.empty))
       attributes.setOntTermAttrs(mapAsJavaMap(Map.empty))
 
+      val featureType = new OntologyTerm()
+      featureType.setId("SO:0000704")
+      featureType.setName("gene")
+      featureType.setOntologySource("SO")
+
       val feature = new Feature()
       feature.setId(gene.id)
       feature.setParentIds(List.empty[String])
       feature.setFeatureSetId("") // TODO
-      feature.setFeatureType(ontologyTerm)
+      feature.setFeatureType(featureType)
       feature.setRegion(region)
       feature.setAttributes(attributes)
 
@@ -235,11 +246,16 @@ object Application extends Controller {
       baseGeneOntologyTerm.setName(baseGene.lbl)
       baseGeneOntologyTerm.setOntologySource(baseGene.id.split(":").apply(0))
 
+      val featureType = new OntologyTerm()
+      featureType.setId("SO:0000704")
+      featureType.setName("gene")
+      featureType.setOntologySource("SO")
+
       val feature = new Feature()
       feature.setId(baseGene.id)
       feature.setParentIds(List.empty[String])
       feature.setFeatureSetId("") // TODO
-      feature.setFeatureType(baseGeneOntologyTerm)
+      feature.setFeatureType(featureType)
       feature.setRegion(region)
       feature.setAttributes(attributes)
 
