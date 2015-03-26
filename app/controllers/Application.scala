@@ -10,8 +10,8 @@ import org.apache.avro.specific.SpecificDatumWriter
 import org.ga4gh.EnvironmentalContext
 import org.ga4gh.Evidence
 import org.ga4gh.PhenotypeInstance
-import org.ga4gh.SearchGenotypePhenotypeRequest
-import org.ga4gh.SearchGenotypePhenotypeResponse
+import org.ga4gh.SearchFeaturesRequest
+import org.ga4gh.SearchFeaturesResponse
 import org.ga4gh.models.OntologyTerm
 import models.SciGraphCategory
 import models.SciGraphEdge
@@ -25,7 +25,7 @@ import play.api.mvc.Action
 import play.api.mvc.Controller
 import org.ga4gh.FeaturePhenotypeAssociation
 import org.apache.avro.specific.SpecificRecordBase
-import org.ga4gh.models.Feature
+import org.ga4gh.models.GenomicFeature
 import org.ga4gh.models.Position
 import org.ga4gh.models.Strand
 import org.ga4gh.models.Region
@@ -82,11 +82,11 @@ object Application extends Controller {
    * Example of a query """{"pageSize": {"int":5}, "variant":null, "evidence":null, "phenotype":null , "pageToken": null }"""
    *
    * @param input
-   * @return SearchGenotypePhenotypeRequest
+   * @return SearchFeaturesRequest
    */
-  def deserializeSearchGenotypePhenotypeRequest(input: String): SearchGenotypePhenotypeRequest = {
-    val datumReader = new SpecificDatumReader[SearchGenotypePhenotypeRequest](SearchGenotypePhenotypeRequest.getClassSchema)
-    val decoder = DecoderFactory.get.jsonDecoder(SearchGenotypePhenotypeRequest.getClassSchema, input)
+  def deserializeSearchGenotypePhenotypeRequest(input: String): SearchFeaturesRequest = {
+    val datumReader = new SpecificDatumReader[SearchFeaturesRequest](SearchFeaturesRequest.getClassSchema)
+    val decoder = DecoderFactory.get.jsonDecoder(SearchFeaturesRequest.getClassSchema, input)
     datumReader.read(null, decoder)
   }
 
@@ -113,7 +113,7 @@ object Application extends Controller {
 
   }
 
-  def toSearchPhenotypeGenotypeResponse(nodes: List[SciGraphNode], edges: List[SciGraphEdge]): SearchGenotypePhenotypeResponse = {
+  def toSearchPhenotypeGenotypeResponse(nodes: List[SciGraphNode], edges: List[SciGraphEdge]): SearchFeaturesResponse = {
     val geneString = "gene"
     val phenotypeString = "Phenotype"
     val basePhenotype = nodes.filter { n => n.meta.category.contains(phenotypeString) }.apply(0) // TODO make sure that this the queried phenotype
@@ -161,7 +161,7 @@ object Application extends Controller {
       featureType.setName("gene")
       featureType.setOntologySource("SO")
 
-      val feature = new Feature()
+      val feature = new GenomicFeature()
       feature.setId(gene.id)
       feature.setParentIds(List.empty[String])
       feature.setFeatureSetId("") // TODO
@@ -179,12 +179,12 @@ object Application extends Controller {
       featurePhenotypeAssociation
     })
 
-    val searchPhenotypeGenotypeResponse = new SearchGenotypePhenotypeResponse()
+    val searchPhenotypeGenotypeResponse = new SearchFeaturesResponse()
     searchPhenotypeGenotypeResponse.setAssociations(featurePhenotypeAssociations)
     searchPhenotypeGenotypeResponse
   }
 
-  def toSearchGenotypePhenotypeResponse(nodes: List[SciGraphNode], edges: List[SciGraphEdge]): SearchGenotypePhenotypeResponse = {
+  def toSearchGenotypePhenotypeResponse(nodes: List[SciGraphNode], edges: List[SciGraphEdge]): SearchFeaturesResponse = {
     val phenotypeString = "Phenotype"
     val diseaseString = "disease"
     val hasObjectString = "hasObject"
@@ -251,7 +251,7 @@ object Application extends Controller {
       featureType.setName("gene")
       featureType.setOntologySource("SO")
 
-      val feature = new Feature()
+      val feature = new GenomicFeature()
       feature.setId(baseGene.id)
       feature.setParentIds(List.empty[String])
       feature.setFeatureSetId("") // TODO
@@ -269,7 +269,7 @@ object Application extends Controller {
       featurePhenotypeAssociation
     })
 
-    val searchGenotypePhenotypeResponse = new SearchGenotypePhenotypeResponse()
+    val searchGenotypePhenotypeResponse = new SearchFeaturesResponse()
     searchGenotypePhenotypeResponse.setAssociations(variantPhenotypeAssociations)
     searchGenotypePhenotypeResponse
   }
