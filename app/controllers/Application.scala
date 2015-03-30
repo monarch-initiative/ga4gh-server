@@ -148,7 +148,6 @@ object Application extends Controller {
       val region = {
         val position = new Position() // TODO
         position.setPosition(0) // TODO
-        position.setStrand(Strand.NO_STRAND) // TODO
         val r = new Region()
         r.setLength(0)
         r.setStart(position)
@@ -233,7 +232,6 @@ object Application extends Controller {
       val region = {
         val position = new Position() // TODO
         position.setPosition(0) // TODO
-        position.setStrand(Strand.NO_STRAND) // TODO
         val r = new Region()
         r.setLength(0)
         r.setStart(position)
