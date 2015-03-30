@@ -36,9 +36,13 @@ object Application extends Controller {
   val serverUrl = "http://rosie.crbs.ucsd.edu:9000/scigraph/"
   val serviceUrl = "dynamic/"
 
-  /// GET /dynamic/genes/6469/phenotypes
-  val phenotypesWithGeneUrl = s"${serverUrl}${serviceUrl}genes/"
-  val phenotypesWithGeneSuffixUrl = "/phenotypes.json/"
+  // GET /dynamic/genes/6469/phenotypes
+  //val phenotypesWithGeneUrl = s"${serverUrl}${serviceUrl}genes/"
+  //val phenotypesWithGeneSuffixUrl = "/phenotypes.json/"
+  
+  // GET /dynamic/features/6469/phenotypes
+  val phenotypesWithFeatureUrl = s"${serverUrl}${serviceUrl}features/"
+  val phenotypesWithFeatureSuffixUrl = "/phenotypes.json/"
 
   // GET /dynamic/phenotypes/{phenotype_id}/genes
   val genesWithPhenotypeUrl = s"${serverUrl}${serviceUrl}phenotypes/"
@@ -55,7 +59,7 @@ object Application extends Controller {
       //requestObj.getGene
       //val geneId = (request.body \ "geneId").as[String]
       //val geneId = "6469"
-      val responseFut = requestToSciGraph(geneId, phenotypesWithGeneUrl, phenotypesWithGeneSuffixUrl)
+      val responseFut = requestToSciGraph(geneId, phenotypesWithFeatureUrl, phenotypesWithFeatureSuffixUrl)
 
       responseFut.map(_ match {
         case (nodes, edges) => {

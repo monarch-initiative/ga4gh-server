@@ -4,7 +4,7 @@ import org.specs2.mutable.Specification
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import org.apache.avro.specific.SpecificDatumReader
-import org.ga4gh.SearchGenotypePhenotypeRequest
+import org.ga4gh.SearchFeaturesRequest
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.specific.SpecificDatumWriter
 import org.apache.avro.io.EncoderFactory
@@ -53,12 +53,13 @@ case class ApplicationTest() extends Specification {
       //      out.close()
       //      println(out.toString)
 
-      val toSer = new SearchGenotypePhenotypeRequest()
+      val toSer = new SearchFeaturesRequest()
       toSer.setPageSize(5)
       println(Application.serialize(toSer))
 
-      val input = """{"pageSize": {"int":5}, "feature":null,"evidence":null, "phenotype":null , "pageToken": null }"""
+      val input = """{"pageSize": {"int":5},"feature":null, "evidence":null, "phenotype":null , "pageToken": null }"""
       val obj = Application.deserializeSearchGenotypePhenotypeRequest(input)
+      println("myobj")
       println(obj)
       true
     }
