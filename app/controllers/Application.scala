@@ -35,18 +35,14 @@ import org.ga4gh.models.ExternalIdentifier
 object Application extends Controller {
   val serverUrl = "http://rosie.crbs.ucsd.edu:9000/scigraph/"
   val serviceUrl = "dynamic/"
-
-  // GET /dynamic/genes/6469/phenotypes
-  //val phenotypesWithGeneUrl = s"${serverUrl}${serviceUrl}genes/"
-  //val phenotypesWithGeneSuffixUrl = "/phenotypes.json/"
   
   // GET /dynamic/features/6469/phenotypes
   val phenotypesWithFeatureUrl = s"${serverUrl}${serviceUrl}features/"
   val phenotypesWithFeatureSuffixUrl = "/phenotypes.json/"
 
-  // GET /dynamic/phenotypes/{phenotype_id}/genes
-  val genesWithPhenotypeUrl = s"${serverUrl}${serviceUrl}phenotypes/"
-  val genesWithPhenotypeSuffixUrl = "/genes.json/"
+  // GET /dynamic/phenotypes/{phenotype_id}/features
+  val featuresWithPhenotypeUrl = s"${serverUrl}${serviceUrl}phenotypes/"
+  val featuresWithPhenotypeSuffixUrl = "/features.json/"
 
   def index = Action {
     //Ok(views.html.index("Your new application is ready."))
@@ -72,7 +68,7 @@ object Application extends Controller {
   def p2gSearch(phenotypeId: String) = Action.async {
     implicit request =>
       //val phenotypeId = "HP_0000528"
-      val responseFut = requestToSciGraph(phenotypeId, genesWithPhenotypeUrl, genesWithPhenotypeSuffixUrl)
+      val responseFut = requestToSciGraph(phenotypeId, featuresWithPhenotypeUrl, featuresWithPhenotypeSuffixUrl)
 
       responseFut.map(_ match {
         case (nodes, edges) => {
@@ -119,9 +115,10 @@ object Application extends Controller {
 
   def toSearchPhenotypeGenotypeResponse(nodes: List[SciGraphNode], edges: List[SciGraphEdge]): SearchFeaturesResponse = {
     val geneString = "gene"
+    val sequenceFeatureString = "sequence feature"
     val phenotypeString = "Phenotype"
     val basePhenotype = nodes.filter { n => n.meta.category.contains(phenotypeString) }.apply(0) // TODO make sure that this the queried phenotype
-    val genes = nodes.filter { n => n.meta.category.contains(geneString) }
+    val genes = nodes.filter { n => n.meta.category.contains(geneString) || n.meta.category.contains(sequenceFeatureString)}
 
     val basePhenotypeontologyTerm = new OntologyTerm()
     basePhenotypeontologyTerm.setId(basePhenotype.id)
