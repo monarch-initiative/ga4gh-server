@@ -3,13 +3,13 @@
 # ~~~~
 
 # Home page
-GET   /                                        controllers.Application.index
+GET   /                                        controllers.G2P.index
 
 #POST   /genotypephenotype/search   controllers.Application.g2pSearch
-GET   /genotypephenotype/search/:geneId        controllers.Application.g2pSearch(geneId)
+GET   /genotypephenotype/search/:geneId        controllers.G2P.g2pSearch(geneId)
 
 #POST   /phenotypegenotype/search   controllers.Application.p2gSearch
-GET   /phenotypegenotype/search/:phenotypeId   controllers.Application.p2gSearch(phenotypeId)
+GET   /phenotypegenotype/search/:phenotypeId   controllers.G2P.p2gSearch(phenotypeId)
 
 # Map static resources from the /public folder to the /assets URL path
 GET   /assets/*file                            controllers.Assets.at(path="/public", file)

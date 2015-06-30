@@ -4,7 +4,7 @@ import org.specs2.mutable.Specification
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import org.apache.avro.specific.SpecificDatumReader
-import org.ga4gh.SearchFeaturesRequest
+import org.ga4gh.methods.SearchFeaturesRequest
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.specific.SpecificDatumWriter
 import org.apache.avro.io.EncoderFactory
