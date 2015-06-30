@@ -7,15 +7,8 @@ import org.apache.avro.io.DecoderFactory
 import org.apache.avro.io.EncoderFactory
 import org.apache.avro.specific.SpecificDatumReader
 import org.apache.avro.specific.SpecificDatumWriter
-import org.ga4gh.EnvironmentalContext
-import org.ga4gh.Evidence
-import org.ga4gh.PhenotypeInstance
-import org.ga4gh.SearchFeaturesRequest
-import org.ga4gh.SearchFeaturesResponse
-import org.ga4gh.models.OntologyTerm
-import models.SciGraphCategory
-import models.SciGraphEdge
-import models.SciGraphNode
+import org.ga4gh.models._
+import models._
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.JsValue
@@ -23,15 +16,11 @@ import play.api.libs.ws.WS
 import play.api.libs.ws.WSRequestHolder
 import play.api.mvc.Action
 import play.api.mvc.Controller
-import org.ga4gh.FeaturePhenotypeAssociation
 import org.apache.avro.specific.SpecificRecordBase
-import org.ga4gh.models.GenomicFeature
-import org.ga4gh.models.Position
-import org.ga4gh.models.Strand
-import org.ga4gh.models.Region
-import org.ga4gh.models.Attributes
-import org.ga4gh.models.ExternalIdentifier
 import play.api.Logger
+import play.api.mvc.BodyParsers
+import org.ga4gh.methods.SearchFeaturesRequest
+import org.ga4gh.methods.SearchFeaturesResponse
 
 object Application extends Controller {
   val serverUrl = "http://rosie.crbs.ucsd.edu:9000/scigraph/"
@@ -57,16 +46,12 @@ object Application extends Controller {
   val intrinsicGenotypeString = "intrinsic genotype"
 
   def index = Action {
-    //Ok(views.html.index("Your new application is ready."))
     Ok("Welcome to the G2P server.")
   }
 
   def g2pSearch(geneId: String) = Action.async /**(BodyParsers.parse.json)*/ {
     implicit request =>
-      //val requestObj = deserializeSearchGenotypePhenotypeRequest(request.body.toString)
-      //requestObj.getGene
-      //val geneId = (request.body \ "geneId").as[String]
-      //val geneId = "6469"
+      //val geneId = "NCBIGene:6469"
       val responseFut = requestToSciGraph(geneId, phenotypesWithFeatureUrl, phenotypesWithFeatureSuffixUrl)
 
       responseFut.map(_ match {
@@ -77,7 +62,7 @@ object Application extends Controller {
       })
   }
 
-  def p2gSearch(phenotypeId: String) = Action.async {
+  def p2gSearch(phenotypeId: String) = Action.async /**((BodyParsers.parse.json)*/ {
     implicit request =>
       //val phenotypeId = "HP_0000528"
       Logger.info(s"Sending request to SciGraph...")
@@ -91,10 +76,12 @@ object Application extends Controller {
         }
       })
   }
+ 
   /**
-   * http://rosie.crbs.ucsd.edu:9000/scigraph/dynamic/phenotypes_with_gene?gene_id=OMIM%3A136850
-   * @param geneId
-   * @return
+   * @param input
+   * @param urlPrefix
+   * @param urlSuffix
+   * @return nodes and edges tuple
    */
   def requestToSciGraph(input: String, urlPrefix: String, urlSuffix: String): Future[(List[SciGraphNode], List[SciGraphEdge])] = {
     val holder: WSRequestHolder = WS.url(urlPrefix + input + urlSuffix)
@@ -169,29 +156,30 @@ object Application extends Controller {
         r.setStart(position)
         r
       }
+      
+      val path = new Path()
+      path.setSegments(List.empty[Segment]) // TODO
 
       val attributes = new Attributes()
-      attributes.setStrAttrs(mapAsJavaMap(Map.empty))
-      attributes.setExtIdAttrs(mapAsJavaMap(Map.empty))
-      attributes.setOntTermAttrs(mapAsJavaMap(Map.empty))
+      attributes.setVals(mapAsJavaMap(Map.empty))
 
       val featureType = new OntologyTerm()
       featureType.setId("SO:0000704")
       featureType.setName("gene")
       featureType.setOntologySource("SO")
 
-      val feature = new GenomicFeature()
+      val feature = new Feature()
       feature.setId(gene.id)
       feature.setParentIds(List.empty[String])
       feature.setFeatureSetId("") // TODO
       feature.setFeatureType(featureType)
-      feature.setRegion(region)
+      feature.setPath(path)
       feature.setAttributes(attributes)
 
       val featurePhenotypeAssociation = new FeaturePhenotypeAssociation()
       featurePhenotypeAssociation.setId(associationId.getOrElse(""))
       featurePhenotypeAssociation.setFeatures(List(feature))
-      featurePhenotypeAssociation.setEvidence(evidence)
+      featurePhenotypeAssociation.setEvidence(List(evidence))
       featurePhenotypeAssociation.setPhenotype(ph)
       featurePhenotypeAssociation.setEnvironmentalContexts(List.empty[EnvironmentalContext])
 
@@ -243,6 +231,9 @@ object Application extends Controller {
       val evidence = new Evidence()
       evidence.setEvidenceType(evidenceOntologyTerm)
 
+      val path = new Path()
+      path.setSegments(List.empty[Segment]) // TODO
+      
       val region = {
         val position = new Position() // TODO
         position.setPosition(0) // TODO
@@ -253,9 +244,7 @@ object Application extends Controller {
       }
 
       val attributes = new Attributes()
-      attributes.setStrAttrs(mapAsJavaMap(Map.empty))
-      attributes.setExtIdAttrs(mapAsJavaMap(Map.empty))
-      attributes.setOntTermAttrs(mapAsJavaMap(Map.empty))
+      attributes.setVals(mapAsJavaMap(Map.empty))
 
       val baseGeneOntologyTerm = new OntologyTerm()
       baseGeneOntologyTerm.setId(baseGene.id)
@@ -267,18 +256,18 @@ object Application extends Controller {
       featureType.setName("gene")
       featureType.setOntologySource("SO")
 
-      val feature = new GenomicFeature()
+      val feature = new Feature()
       feature.setId(baseGene.id)
       feature.setParentIds(List.empty[String])
       feature.setFeatureSetId("") // TODO
       feature.setFeatureType(featureType)
-      feature.setRegion(region)
+      feature.setPath(path)
       feature.setAttributes(attributes)
 
       val featurePhenotypeAssociation = new FeaturePhenotypeAssociation()
       featurePhenotypeAssociation.setId(associationId.getOrElse(""))
       featurePhenotypeAssociation.setPhenotype(ph)
-      featurePhenotypeAssociation.setEvidence(evidence)
+      featurePhenotypeAssociation.setEvidence(List(evidence))
       featurePhenotypeAssociation.setFeatures(List(feature))
       featurePhenotypeAssociation.setEnvironmentalContexts(List.empty[EnvironmentalContext])
 
