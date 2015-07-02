@@ -102,7 +102,7 @@ object G2P extends Controller {
   }
 
   def toSearchPhenotypeGenotypeResponse(nodes: List[SciGraphNode], edges: List[SciGraphEdge]): SearchFeaturesResponse = {
-    val basePhenotype = nodes.filter { n => n.meta.category.contains(phenotypeString) }.apply(0) // TODO make sure that this the queried phenotype
+    val basePhenotype = nodes.filter { n => n.meta.category.contains(phenotypeString) || n.meta.category.contains(diseaseString)}.apply(0) // TODO make sure that this the queried phenotype
     val genes = nodes.filter { n => n.meta.category.contains(geneString) || n.meta.category.contains(sequenceFeatureString) }
     val evidences = nodes.filter { n => n.meta.category.contains(evidenceString) }
 
