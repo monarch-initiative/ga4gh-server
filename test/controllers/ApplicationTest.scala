@@ -55,10 +55,10 @@ case class ApplicationTest() extends Specification {
 
       val toSer = new SearchFeaturesRequest()
       toSer.setPageSize(5)
-      println(Application.serialize(toSer))
+      println(G2P.serialize(toSer))
 
       val input = """{"pageSize": {"int":5},"feature":null, "evidence":null, "phenotype":null , "pageToken": null }"""
-      val obj = Application.deserializeSearchGenotypePhenotypeRequest(input)
+      val obj = G2P.deserializeSearchGenotypePhenotypeRequest(input)
       println("myobj")
       println(obj)
       true
